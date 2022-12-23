@@ -1,0 +1,71 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(here)
+library(readr)
+
+# test if a directory named "data" exists locally
+if(!dir.exists(here("data"))) { dir.create(here("data")) }
+
+if(!file.exists(here("data", "tuition_cost.RData")) | !file.exists(here("data", "salary_potential.RData"))){
+  tuition_cost <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/tuition_cost.csv')
+  salary_potential <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/salary_potential.csv')
+  
+  # save the files to RData objects
+  save(tuition_cost, file = here("data", "tuition_cost.RData"))
+  save(salary_potential, file = here("data", "salary_potential.RData"))
+}
+
+# read in the data locally
+tuition_cost <- get(load(here("data", "tuition_cost.RData")))
+salary_potential <- get(load(here("data", "salary_potential.RData")))
+```
+
+About
+=======================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
+Data
+=======================================================================
+- The data originally came from the US Department of Education. I found the data on [TidyTuesday](https://www.tidytuesday.com) and the link to its GitHub repository is <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10>.
+- I use 2 datasets from this repository: tuition_cost.csv which contains the in-state and out-state tuition for each school and salary_potential.csv which contains early and mid career pay in USD for students in each school.
+- Data dictionaries are available here:
+<https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#tuition_costcsv>,
+<https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#salary_potentialcsv>.
+
+
+
+
+
+Analysis
+=======================================================================
