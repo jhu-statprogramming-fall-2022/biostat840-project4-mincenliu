@@ -2,7 +2,6 @@
 title: "Project 4"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
     vertical_layout: fill
 ---
 
@@ -15,6 +14,8 @@ library(stringr)
 library(purrr)
 library(ggplot2)
 library(omnibus)
+library(DT)
+library(htmltools)
 
 # test if a directory named "data" exists locally
 if(!dir.exists(here("data"))) { dir.create(here("data")) }
@@ -33,43 +34,55 @@ tuition_cost <- get(load(here("data", "tuition_cost.RData")))
 salary_potential <- get(load(here("data", "salary_potential.RData")))
 ```
 
-About
+About {data-icon="fa-question-circle"}
 =======================================================================
-### Purpose of the dashboard
 
-### Original location of the data
-- The data originally came from the US Department of Education. I found the data on [TidyTuesday](https://www.tidytuesday.com) and the link to its GitHub repository is <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10>.
+**What is the purpose of this dashboard?**
 
-Column {data-width=650}
------------------------------------------------------------------------
+This dashboard is to illustrate the college tuition, the pay after graduation, and their relationship.
 
-### Chart A
+**The data**
 
-```{r}
+The data used in this dashboard originally came from the US Department of Education. I found the data on [TidyTuesday](https://www.tidytuesday.com) and the link to its GitHub repository is <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10>.
 
-```
 
-Column {data-width=350}
------------------------------------------------------------------------
-
-### Chart B
-
-```{r}
-
-```
-
-### Chart C
-
-```{r}
-
-```
-
-Data
+Data {data-icon="fa-database"}
 =======================================================================
-- There are 2 datasets: tuition_cost which contains the in-state and out-state tuition for each school and salary_potential which contains early and mid career pay in USD for students in each school.
-- Data dictionaries are available here:
-<https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#tuition_costcsv>,
-<https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#salary_potentialcsv>.
+
+Column {data-width = 500}
+-------------------------------------
+**tuition_cost** contains the in-state and out-of-state tuition for each school.
+
+Data dictionary: <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#tuition_costcsv>
+
+```{r, echo=FALSE}
+tc_table <- tuition_cost %>% select(name, state, type, in_state_tuition, out_of_state_tuition)
+```
+
+```{r, echo=FALSE}
+renderDataTable({
+  datatable(tc_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
+            options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
+})
+```
+
+Column {data-width = 500}
+-------------------------------------
+**salary_potential** contains the early and mid career pay in USD for students in each school.
+
+Data dictionary: <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#salary_potentialcsv>
+
+```{r, echo=FALSE}
+sp_table <- salary_potential %>% rename(state = state_name) %>%
+  select(name, state, early_career_pay, mid_career_pay, stem_percent)
+```
+
+```{r, echo=FALSE}
+renderDataTable({
+  datatable(sp_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
+            options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
+})
+```
 
 
 Static 1
@@ -185,11 +198,4 @@ combined %>% ggplot(aes(early_career_pay)) +
 - On average, private school out-of-state tuition is much higher than public school out-of-state tuition among the 4-year institutions.
 - We see an overall positive relation between the mid career pay and the out-of-state tuition in each school type.
 - The early career pay has a right-skewed distribution.
-
-### List of Functions Used
-- `dplyr`: `glimpse()`, `inner_join()`, `select()`, `slice()`, `count()`, `filter()`
-- `stringr`: `str_equal()`, `str_replace()`
-- `purrr`: `map2()`, `pmap()`
-- `ggplot2`: `geom_boxplot()`, `geom_point()`, `geom_density()`, `facet_grid()`
-- `omnibus`: `naRows()`, `mmode()`
 
