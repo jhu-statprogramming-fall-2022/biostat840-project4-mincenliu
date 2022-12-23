@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Project 4"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -10,6 +10,11 @@ output:
 library(flexdashboard)
 library(here)
 library(readr)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(ggplot2)
+library(omnibus)
 
 # test if a directory named "data" exists locally
 if(!dir.exists(here("data"))) { dir.create(here("data")) }
@@ -30,6 +35,10 @@ salary_potential <- get(load(here("data", "salary_potential.RData")))
 
 About
 =======================================================================
+### Purpose of the dashboard
+
+### Original location of the data
+- The data originally came from the US Department of Education. I found the data on [TidyTuesday](https://www.tidytuesday.com) and the link to its GitHub repository is <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10>.
 
 Column {data-width=650}
 -----------------------------------------------------------------------
@@ -57,15 +66,130 @@ Column {data-width=350}
 
 Data
 =======================================================================
-- The data originally came from the US Department of Education. I found the data on [TidyTuesday](https://www.tidytuesday.com) and the link to its GitHub repository is <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10>.
-- I use 2 datasets from this repository: tuition_cost.csv which contains the in-state and out-state tuition for each school and salary_potential.csv which contains early and mid career pay in USD for students in each school.
+- There are 2 datasets: tuition_cost which contains the in-state and out-state tuition for each school and salary_potential which contains early and mid career pay in USD for students in each school.
 - Data dictionaries are available here:
 <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#tuition_costcsv>,
 <https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-10#salary_potentialcsv>.
 
 
+Static 1
+=======================================================================
 
+
+Static 2
+=======================================================================
+
+Interactive 1
+=======================================================================
+
+
+Interactive 2
+=======================================================================
 
 
 Analysis
 =======================================================================
+### Data Wrangling
+```{r}
+# We first combine the 2 data frames. We include only schools that are in both data frames.
+combined <- inner_join(tuition_cost, salary_potential, by = "name")
+```
+
+```{r}
+# Remove unwanted variables
+combined <- combined %>% select(-room_and_board, -in_state_total, -out_of_state_total, -rank, -make_world_better_percent)
+
+# Check if there's any NAs. If missing values exist, get the corresponding row numbers.
+naRows(combined)
+```
+
+Luckily, we don't have any missing values.
+
+```{r}
+# We want to check whether there's any discrepancy between the "state" variables from the 2 data frames.
+temp <- map2(.x = combined$state, .y = combined$state_name, .f = ~str_equal(.x, .y))
+
+# Save the index of not matched cases
+ind <- which(temp == FALSE)
+
+combined %>% slice(ind) %>% select(state, state_name)
+```
+
+From here, we see that it is possible that the difference in the 2 columns is caused by the dash in the values of "state_name". We're going to check that.
+
+```{r}
+# Replace "-" with " "
+combined$state_name <- str_replace(combined$state_name, "-", " ")
+temp2 <- pmap(list(x = combined$state, y = combined$state_name),
+			  .f = ~str_equal(..1, ..2))
+ind2 <- which(temp2 == FALSE)
+combined %>% slice(ind2) %>% select(name, state, state_code, state_name)
+```
+
+We remove the 4 observations with inconsistent information.
+```{r}
+combined <- combined %>% slice(-ind2) %>% select(-state_name)
+combined
+```
+
+```{r}
+combined %>% count(degree_length)
+```
+
+We keep only the 4-year schools.
+```{r}
+combined <- combined %>% filter(degree_length == "4 Year")
+combined
+```
+
+We want to find the modal value(s) for the percent of student body in STEM:
+```{r}
+mmode(combined$stem_percent)
+```
+
+We can see that the modes are 0 and 7.
+
+### Data Visualization
+- Plot 1
+```{r}
+combined %>% ggplot(aes(x = type, y = out_of_state_tuition)) +
+	geom_boxplot() + 
+	labs(title = "Out-of-state Tuition by School Type", 
+		 subtitle = "This is a box plot displaying the summary statistics for the out-of-state tuition by school type.\nWe can see that the first quartile of private school tuition is above the third quartile of the\npublic school tuition.", 
+		 caption = "Mincen Liu") +
+	xlab("school type") + ylab("out-of-state tuition in USD")
+```
+
+- Plot 2
+```{r}
+combined %>% ggplot(aes(x = out_of_state_tuition, y = mid_career_pay)) + 
+	geom_point() + 
+	facet_grid(type ~ .) + 
+	labs(title = "Mid Career Pay vs. Out-of-state Tuition by School Type", 
+		 subtitle = "This is a scatter plot showing the relationship between the mid career pay and the out-of-state\ntuition, faceted by school type. We see an overall positive relation in each school type.", 
+		 caption = "Mincen Liu") +
+	xlab("out-of-state tuition in USD") + ylab("mid career pay in USD")
+```
+
+- Plot 3
+```{r}
+combined %>% ggplot(aes(early_career_pay)) +
+	geom_density() +
+	labs(title = "Early Career Pay", 
+		 subtitle = "This is a density plot of the early career pay. We see a right-skewed distribution.", 
+		 caption = "Mincen Liu") +
+	xlab("early career pay in USD") + ylab("density")
+```
+
+### Interpretation
+- On average, private school out-of-state tuition is much higher than public school out-of-state tuition among the 4-year institutions.
+- We see an overall positive relation between the mid career pay and the out-of-state tuition in each school type.
+- The early career pay has a right-skewed distribution.
+
+### List of Functions Used
+- `dplyr`: `glimpse()`, `inner_join()`, `select()`, `slice()`, `count()`, `filter()`
+- `stringr`: `str_equal()`, `str_replace()`
+- `purrr`: `map2()`, `pmap()`
+- `ggplot2`: `geom_boxplot()`, `geom_point()`, `geom_density()`, `facet_grid()`
+- `omnibus`: `naRows()`, `mmode()`
+
