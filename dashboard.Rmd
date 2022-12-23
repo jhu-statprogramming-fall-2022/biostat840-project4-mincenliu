@@ -85,15 +85,71 @@ renderDataTable({
 ```
 
 
-Static 1
+School Counts {data-icon="fa-school"}
 =======================================================================
 
+Column {.tabset .tabset-fade}
+-------------------------------------
 
-Static 2
+### Total Schools Per State
+```{r}
+tuition_cost %>% ggplot(aes(x = state_code)) + 
+  geom_bar() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
+  xlab("state") + labs(title = "Total Number of Schools Per State")
+```
+
+### Public Schools Per State
+```{r}
+tuition_cost %>% filter(type == "Public") %>%
+  ggplot(aes(x = state_code)) + 
+  geom_bar() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
+  xlab("state") + labs(title = "Total Number of Public Schools Per State")
+```
+
+### Private Schools Per State
+```{r}
+tuition_cost %>% filter(type == "Private") %>%
+  ggplot(aes(x = state_code)) + 
+  geom_bar() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
+  xlab("state") + labs(title = "Total Number of Private Schools Per State")
+```
+
+
+Tuition vs. Pay {data-icon="fa-school"}
 =======================================================================
+
+### **Average in-state tuition**
+
+```{r}
+valueBox(value = formatC(mean(tuition_cost$in_state_tuition), 7),
+         color = "white")
+```
+
+### **Average out-of-state tuition**
+
+```{r}
+valueBox(value = formatC(mean(tuition_cost$out_of_state_tuition), 7),
+         color = "white")
+```
+
+### **Average early career pay**
+
+```{r}
+valueBox(value = formatC(mean(salary_potential$early_career_pay), 7),
+         color = "white")
+```
+
+### **Average mid career pay**
+
+```{r}
+valueBox(value = formatC(mean(salary_potential$mid_career_pay), 7),
+         color = "white")
+```
+
 
 Interactive 1
 =======================================================================
+
 
 
 Interactive 2
@@ -102,13 +158,18 @@ Interactive 2
 
 Analysis
 =======================================================================
+
+Column {.tabset}
+-------------------------------------
+
 ### Data Wrangling
-```{r}
+
+```{r, echo=TRUE}
 # We first combine the 2 data frames. We include only schools that are in both data frames.
 combined <- inner_join(tuition_cost, salary_potential, by = "name")
 ```
 
-```{r}
+```{r, echo=TRUE}
 # Remove unwanted variables
 combined <- combined %>% select(-room_and_board, -in_state_total, -out_of_state_total, -rank, -make_world_better_percent)
 
@@ -118,7 +179,7 @@ naRows(combined)
 
 Luckily, we don't have any missing values.
 
-```{r}
+```{r, echo=TRUE}
 # We want to check whether there's any discrepancy between the "state" variables from the 2 data frames.
 temp <- map2(.x = combined$state, .y = combined$state_name, .f = ~str_equal(.x, .y))
 
@@ -130,7 +191,7 @@ combined %>% slice(ind) %>% select(state, state_name)
 
 From here, we see that it is possible that the difference in the 2 columns is caused by the dash in the values of "state_name". We're going to check that.
 
-```{r}
+```{r, echo=TRUE}
 # Replace "-" with " "
 combined$state_name <- str_replace(combined$state_name, "-", " ")
 temp2 <- pmap(list(x = combined$state, y = combined$state_name),
@@ -140,31 +201,32 @@ combined %>% slice(ind2) %>% select(name, state, state_code, state_name)
 ```
 
 We remove the 4 observations with inconsistent information.
-```{r}
+```{r, echo=TRUE}
 combined <- combined %>% slice(-ind2) %>% select(-state_name)
 combined
 ```
 
-```{r}
+```{r, echo=TRUE}
 combined %>% count(degree_length)
 ```
 
 We keep only the 4-year schools.
-```{r}
+```{r, echo=TRUE}
 combined <- combined %>% filter(degree_length == "4 Year")
 combined
 ```
 
 We want to find the modal value(s) for the percent of student body in STEM:
-```{r}
+```{r, echo=TRUE}
 mmode(combined$stem_percent)
 ```
 
 We can see that the modes are 0 and 7.
 
-### Data Visualization
-- Plot 1
-```{r}
+### Data Visualization {.tabset}
+
+#### Plot 1
+```{r, echo=TRUE}
 combined %>% ggplot(aes(x = type, y = out_of_state_tuition)) +
 	geom_boxplot() + 
 	labs(title = "Out-of-state Tuition by School Type", 
@@ -173,8 +235,8 @@ combined %>% ggplot(aes(x = type, y = out_of_state_tuition)) +
 	xlab("school type") + ylab("out-of-state tuition in USD")
 ```
 
-- Plot 2
-```{r}
+#### Plot 2
+```{r, echo=TRUE}
 combined %>% ggplot(aes(x = out_of_state_tuition, y = mid_career_pay)) + 
 	geom_point() + 
 	facet_grid(type ~ .) + 
@@ -184,8 +246,8 @@ combined %>% ggplot(aes(x = out_of_state_tuition, y = mid_career_pay)) +
 	xlab("out-of-state tuition in USD") + ylab("mid career pay in USD")
 ```
 
-- Plot 3
-```{r}
+#### Plot 3
+```{r, echo=TRUE}
 combined %>% ggplot(aes(early_career_pay)) +
 	geom_density() +
 	labs(title = "Early Career Pay", 
@@ -198,4 +260,3 @@ combined %>% ggplot(aes(early_career_pay)) +
 - On average, private school out-of-state tuition is much higher than public school out-of-state tuition among the 4-year institutions.
 - We see an overall positive relation between the mid career pay and the out-of-state tuition in each school type.
 - The early career pay has a right-skewed distribution.
-
