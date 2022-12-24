@@ -14,9 +14,9 @@ library(dplyr)
 library(stringr)
 library(purrr)
 library(ggplot2)
-library(omnibus)
 library(DT)
 library(htmltools)
+library(shiny)
 
 # test if a directory named "data" exists locally
 if(!dir.exists(here("data"))) { dir.create(here("data")) }
@@ -61,10 +61,8 @@ tc_table <- tuition_cost %>% select(name, state, type, in_state_tuition, out_of_
 ```
 
 ```{r, echo=FALSE}
-renderDT({
-  DT::datatable(tc_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
+renderDataTable(tc_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
             options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
-})
 ```
 
 Column {data-width = 500}
@@ -79,10 +77,8 @@ sp_table <- salary_potential %>% rename(state = state_name) %>%
 ```
 
 ```{r, echo=FALSE}
-renderDT({
-  DT::datatable(sp_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
+renderDataTable(sp_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
             options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
-})
 ```
 
 
@@ -219,12 +215,8 @@ combined <- inner_join(tuition_cost, salary_potential, by = "name")
 ```{r, echo=TRUE}
 # Remove unwanted variables
 combined <- combined %>% select(-room_and_board, -in_state_total, -out_of_state_total, -rank, -make_world_better_percent)
-
-# Check if there's any NAs. If missing values exist, get the corresponding row numbers.
-naRows(combined)
 ```
 
-Luckily, we don't have any missing values.
 
 ```{r, echo=TRUE}
 # We want to check whether there's any discrepancy between the "state" variables from the 2 data frames.
@@ -263,12 +255,6 @@ combined <- combined %>% filter(degree_length == "4 Year")
 combined
 ```
 
-We want to find the modal value(s) for the percent of student body in STEM:
-```{r, echo=TRUE}
-mmode(combined$stem_percent)
-```
-
-We can see that the modes are 0 and 7.
 
 ### Data Visualization {.tabset}
 
