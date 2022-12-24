@@ -3,6 +3,7 @@ title: "Project 4"
 output: 
   flexdashboard::flex_dashboard:
     vertical_layout: fill
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -60,8 +61,10 @@ tc_table <- tuition_cost %>% select(name, state, type, in_state_tuition, out_of_
 ```
 
 ```{r, echo=FALSE}
-renderDataTable({
-  datatable(tc_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
+renderDT({
+  tc_table <- tuition_cost %>% select(name, state, type, in_state_tuition, out_of_state_tuition)
+  
+  DT::datatable(tc_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
             options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
 })
 ```
@@ -78,8 +81,8 @@ sp_table <- salary_potential %>% rename(state = state_name) %>%
 ```
 
 ```{r, echo=FALSE}
-renderDataTable({
-  datatable(sp_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
+renderDT({
+  DT::datatable(sp_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
             options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
 })
 ```
@@ -92,14 +95,14 @@ Column {.tabset .tabset-fade}
 -------------------------------------
 
 ### Total Schools Per State
-```{r}
+```{r, echo=FALSE}
 tuition_cost %>% ggplot(aes(x = state_code)) + 
   geom_bar() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
   xlab("state") + labs(title = "Total Number of Schools Per State")
 ```
 
 ### Public Schools Per State
-```{r}
+```{r, echo=FALSE}
 tuition_cost %>% filter(type == "Public") %>%
   ggplot(aes(x = state_code)) + 
   geom_bar() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
@@ -107,7 +110,7 @@ tuition_cost %>% filter(type == "Public") %>%
 ```
 
 ### Private Schools Per State
-```{r}
+```{r, echo=FALSE}
 tuition_cost %>% filter(type == "Private") %>%
   ggplot(aes(x = state_code)) + 
   geom_bar() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
@@ -120,40 +123,86 @@ Tuition vs. Pay {data-icon="fa-school"}
 
 ### **Average in-state tuition**
 
-```{r}
+```{r, echo=FALSE}
 valueBox(value = formatC(mean(tuition_cost$in_state_tuition), 7),
          color = "white")
 ```
 
 ### **Average out-of-state tuition**
 
-```{r}
+```{r, echo=FALSE}
 valueBox(value = formatC(mean(tuition_cost$out_of_state_tuition), 7),
          color = "white")
 ```
 
 ### **Average early career pay**
 
-```{r}
+```{r, echo=FALSE}
 valueBox(value = formatC(mean(salary_potential$early_career_pay), 7),
          color = "white")
 ```
 
 ### **Average mid career pay**
 
-```{r}
+```{r, echo=FALSE}
 valueBox(value = formatC(mean(salary_potential$mid_career_pay), 7),
          color = "white")
 ```
 
 
-Interactive 1
+Mid Career Pay {data-icon="fa-seedling"}
 =======================================================================
 
+Column {.sidebar data-width=300}
+-----------------------------------------------------------------------
+
+```{r, echo=FALSE}
+selectInput(inputId = "state_selected",
+              label = "Select a state to explore:",
+            choices = salary_potential %>%
+              pull(state_name) %>%
+              unique() %>%
+              sort(), selected = "Alabama")
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Top 10 schools with the highest mid career pay in the selected state
+
+```{r, echo=FALSE}
+renderPlot({
+  dat <- salary_potential %>% filter(state_name == input$state_selected) %>% arrange(desc(mid_career_pay)) %>% slice_head(n = 10)
+
+  dat %>% ggplot(aes(x = mid_career_pay , y = reorder(name, mid_career_pay))) + geom_col() + 
+    ylab("name of school") + xlab("estimated mid career pay in USD")
+})
+```
 
 
-Interactive 2
+Stem {data-icon="fa-seedling"}
 =======================================================================
+
+Column {.sidebar data-width=300}
+-----------------------------------------------------------------------
+
+```{r, echo=FALSE}
+numericInput("perc_stem", label = "Percent of student body in STEM:",
+             min = 0, max = 100, value = 20, step = 1)
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Schools with input percent of student body in STEM:
+
+```{r}
+renderDT({
+  dat2 <- salary_potential %>% filter(stem_percent == input$perc_stem) %>% select(name, early_career_pay, mid_career_pay)
+  
+  DT::datatable(dat2)
+})
+```
 
 
 Analysis
