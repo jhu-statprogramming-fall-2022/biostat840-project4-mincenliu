@@ -62,8 +62,6 @@ tc_table <- tuition_cost %>% select(name, state, type, in_state_tuition, out_of_
 
 ```{r, echo=FALSE}
 renderDT({
-  tc_table <- tuition_cost %>% select(name, state, type, in_state_tuition, out_of_state_tuition)
-  
   DT::datatable(tc_table, caption = tags$caption(style = 'caption-side: top; text-align: Left;'), 
             options = list(autowidth = TRUE, pageLength = 15, searching = FALSE, scroller = TRUE, scrollY = '500px'))
 })
@@ -200,7 +198,7 @@ Column {data-width=500}
 renderDT({
   dat2 <- salary_potential %>% filter(stem_percent == input$perc_stem) %>% select(name, early_career_pay, mid_career_pay)
   
-  DT::datatable(dat2)
+  datatable(dat2)
 })
 ```
 
